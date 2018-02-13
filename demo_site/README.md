@@ -4,13 +4,6 @@
 * modify the "settings.py", define your "SHARD" section in "DATABASES"
 * in models.py of your Django apps, use "from djangoext.db" instead of "from django.db"
 
-# Partition methods
-currently this package supports:
-* mod
-* divide
-* crc
-* date/time
-* (or add your own method via code)
 
 # Modify settings.py
 (under construction)
