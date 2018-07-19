@@ -173,6 +173,10 @@ class PartitionModelFactory(object):
         # Note that Meta attribute still exist
         attrs.pop("_meta", None)
 
+        # Remove managers to ensure sharded models has correct managers
+        attrs.pop("_default_manager", None)
+        attrs.pop("_base_manager", None)
+
         model_class = type(
             model_name,
             tuple([models.Model]),
