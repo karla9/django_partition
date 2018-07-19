@@ -168,7 +168,7 @@ class PartitionModelFactory(object):
 
         # Put local fields in the attributes
         for field in attrs["_meta"].get_fields():
-            attrs[field.name] = field
+            attrs[field.name] = field.clone()
         # Pop _meta since django ModelBase does not expect an Options object in the attribute
         # Note that Meta attribute still exist
         attrs.pop("_meta", None)
