@@ -231,7 +231,6 @@ class MetaClassPartitionModel(ModelBase):
 
         # base class fields
         for base_cls in bases:
-            print(base_cls.__name__)
             if base_cls.__name__ == "PartitionModel":
                 continue
             base_attr_dict = dict(base_cls.__dict__)
@@ -240,8 +239,8 @@ class MetaClassPartitionModel(ModelBase):
                     continue
 
                 base_attr_val = base_attr_dict[key]
+                from django.db import models
                 if isinstance(base_attr_val, models.Field):
-                    # print(key)
                     attrs[key] = base_attr_val.clone()
                 else:
                     attrs[key] = base_attr_val
