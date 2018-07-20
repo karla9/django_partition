@@ -228,7 +228,26 @@ class MetaClassPartitionModel(ModelBase):
     def __new__(cls, name, bases, attrs):
         if name != 'PartitionModel':
             attr_meta = attrs.get("Meta", None)
+
+        # base class fields
+        for base_cls in bases:
+            print(base_cls.__name__)
+            if base_cls.__name__ == "PartitionModel":
+                continue
+            base_attr_dict = dict(base_cls.__dict__)
+            for key in base_attr_dict:
+                if key.startswith("__"):
+                    continue
+
+                base_attr_val = base_attr_dict[key]
+                if isinstance(base_attr_val, models.Field):
+                    # print(key)
+                    attrs[key] = base_attr_val.clone()
+                else:
+                    attrs[key] = base_attr_val
+
         new_class = super(MetaClassPartitionModel, cls).__new__(cls, name, bases, attrs)
+
         if name != 'PartitionModel':
             if attr_meta is not None:
                 setattr(new_class, 'Meta', attr_meta)
@@ -236,7 +255,6 @@ class MetaClassPartitionModel(ModelBase):
             if not manager:
                 new_class.objects = PartitionManager(new_class)
         return new_class
-
 
 class PartitionModel(object):
     __metaclass__ = MetaClassPartitionModel
