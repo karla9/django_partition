@@ -1,4 +1,5 @@
 # -*- coding: UTF-8 -*-
+from django.db import models
 
 
 def _partition_model_new(cls, *args, **kwargs):
@@ -106,7 +107,6 @@ class PartitionModelFactory(object):
         :return:
         """
         # type: (PartitionModel, dict) -> django.db.Model
-        from django.db import models
 
         # get the value used for sharding
         partition_id = None
@@ -131,6 +131,7 @@ class PartitionModelFactory(object):
 
         attrs = {}
         cls_attr_dict = dict(partition_model.__dict__)
+        cls_meta = cls_attr_dict["_meta"]
         for key in cls_attr_dict:
             cls_attr_val = cls_attr_dict[key]
             if isinstance(cls_attr_val, models.Field):
@@ -167,7 +168,7 @@ class PartitionModelFactory(object):
         attrs['new'] = classmethod(_partition_model_new)
 
         # Put local fields in the attributes
-        for field in attrs["_meta"].get_fields():
+        for field in cls_meta.get_fields():
             attrs[field.name] = field.clone()
         # Pop _meta since django ModelBase does not expect an Options object in the attribute
         # Note that Meta attribute still exist
@@ -222,8 +223,7 @@ class PartitionManager(object):
         return PartitionQuerySet(partition_model=self.model_cls).create(**kwargs)
 
 
-from django.db.models.base import ModelBase
-class MetaClassPartitionModel(ModelBase):
+class MetaClassPartitionModel(models.base.ModelBase):
     # noinspection PyInitNewSignature
     def __new__(cls, name, bases, attrs):
         if name != 'PartitionModel':
@@ -233,13 +233,15 @@ class MetaClassPartitionModel(ModelBase):
         for base_cls in bases:
             if base_cls.__name__ == "PartitionModel":
                 continue
+            if isinstance(base_cls, models.base.ModelBase):
+                # handled by _meta
+                continue
             base_attr_dict = dict(base_cls.__dict__)
             for key in base_attr_dict:
                 if key.startswith("__"):
                     continue
 
                 base_attr_val = base_attr_dict[key]
-                from django.db import models
                 if isinstance(base_attr_val, models.Field):
                     attrs[key] = base_attr_val.clone()
                 else:
@@ -254,6 +256,7 @@ class MetaClassPartitionModel(ModelBase):
             if not manager:
                 new_class.objects = PartitionManager(new_class)
         return new_class
+
 
 class PartitionModel(object):
     __metaclass__ = MetaClassPartitionModel
