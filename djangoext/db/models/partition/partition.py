@@ -1,4 +1,5 @@
 # -*- coding: UTF-8 -*-
+from django.db import models
 
 
 def _partition_model_new(cls, *args, **kwargs):
@@ -29,13 +30,10 @@ class PartitionUtil(object):
                     "format": "02u"
                 }
         """
-        try:
-            # for django models
-            # pylint: disable=protected-access
-            meta_obj = partition_model._meta
-        except:
-            # for our own partitioned tables (shop_customer_tab, etc)
-            meta_obj = partition_model.Meta
+        # for both django models and our own partitioned tables (shop_customer_tab, etc)
+        # our own partitioned tables now have _meta attribute
+        # pylint: disable=protected-access
+        meta_obj = partition_model._meta
 
         # here we don't need to consider whether user wants to use master or slave,
         # as we assume master and slave have same table structures and thus same sharding settings
@@ -109,7 +107,6 @@ class PartitionModelFactory(object):
         :return:
         """
         # type: (PartitionModel, dict) -> django.db.Model
-        from django.db import models
 
         # get the value used for sharding
         partition_id = None
@@ -134,6 +131,7 @@ class PartitionModelFactory(object):
 
         attrs = {}
         cls_attr_dict = dict(partition_model.__dict__)
+        cls_meta = cls_attr_dict["_meta"]
         for key in cls_attr_dict:
             cls_attr_val = cls_attr_dict[key]
             if isinstance(cls_attr_val, models.Field):
@@ -168,6 +166,17 @@ class PartitionModelFactory(object):
             # TODO: should also add meta.unique_together here
         attrs['Meta'] = meta
         attrs['new'] = classmethod(_partition_model_new)
+
+        # Put local fields in the attributes
+        for field in cls_meta.get_fields():
+            attrs[field.name] = field.clone()
+        # Pop _meta since django ModelBase does not expect an Options object in the attribute
+        # Note that Meta attribute still exist
+        attrs.pop("_meta", None)
+
+        # Remove managers to ensure sharded models has correct managers
+        attrs.pop("_default_manager", None)
+        attrs.pop("_base_manager", None)
 
         model_class = type(
             model_name,
@@ -214,15 +223,39 @@ class PartitionManager(object):
         return PartitionQuerySet(partition_model=self.model_cls).create(**kwargs)
 
 
-class MetaClassPartitionModel(type):
+class MetaClassPartitionModel(models.base.ModelBase):
     # noinspection PyInitNewSignature
-    def __new__(mcs, name, bases, attrs):
-        type_inst = type.__new__(mcs, name, bases, attrs)
+    def __new__(cls, name, bases, attrs):
         if name != 'PartitionModel':
+            attr_meta = attrs.get("Meta", None)
+
+        # base class fields
+        for base_cls in bases:
+            if base_cls.__name__ == "PartitionModel":
+                continue
+            if isinstance(base_cls, models.base.ModelBase):
+                # handled by _meta
+                continue
+            base_attr_dict = dict(base_cls.__dict__)
+            for key in base_attr_dict:
+                if key.startswith("__"):
+                    continue
+
+                base_attr_val = base_attr_dict[key]
+                if isinstance(base_attr_val, models.Field):
+                    attrs[key] = base_attr_val.clone()
+                else:
+                    attrs[key] = base_attr_val
+
+        new_class = super(MetaClassPartitionModel, cls).__new__(cls, name, bases, attrs)
+
+        if name != 'PartitionModel':
+            if attr_meta is not None:
+                setattr(new_class, 'Meta', attr_meta)
             manager = attrs.get('objects', None)
             if not manager:
-                type_inst.objects = PartitionManager(type_inst)
-        return type_inst
+                new_class.objects = PartitionManager(new_class)
+        return new_class
 
 
 class PartitionModel(object):
