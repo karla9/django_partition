@@ -22,7 +22,8 @@ class PartitionUtil(object):
     def get_shard_level(partition_model):
         """
         :param partition_model: like models.ShopCustomer
-        :return: None or string of sharded column, like "shop_id"
+        :return: None or string of partition level,
+                    currently support "table" or "database"
         """
         shard_conf = PartitionUtil.get_shard_conf(partition_model)
         if not shard_conf:
