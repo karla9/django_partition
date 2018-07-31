@@ -19,6 +19,18 @@ class PartitionUtil(object):
         return shard_conf.get('key', None)
 
     @staticmethod
+    def get_shard_level(partition_model):
+        """
+        :param partition_model: like models.ShopCustomer
+        :return: None or string of sharded column, like "shop_id"
+        """
+        shard_conf = PartitionUtil.get_shard_conf(partition_model)
+        if not shard_conf:
+            # For backward compatibility
+            return 'table'
+        return shard_conf.get('level', None)
+
+    @staticmethod
     def get_shard_conf(partition_model):
         """
         :return: example
@@ -160,7 +172,13 @@ class PartitionModelFactory(object):
         from . import utils
         meta = utils.dict_to_object(partition_model.Meta.__dict__)
         if partition_id is not None:
-            meta.db_table += '_%s' % sharded_table_postfix
+            meta.partition = {}
+            meta.partition['shard_level'] = PartitionUtil.get_shard_level(partition_model)
+            if meta.partition['shard_level'] not in ('table', 'database'):
+                raise ValueError('shard level must be "table" or "database"')
+            meta.partition['shard_postfix'] = sharded_table_postfix
+            if meta.partition['shard_level'] == 'table':
+                meta.db_table += '_%s' % sharded_table_postfix
             # TODO: should find the app_label from the models.py definition
             # meta.app_label = BaseModel.Meta.app_label
             # TODO: should also add meta.unique_together here

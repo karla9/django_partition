@@ -141,6 +141,10 @@ DATABASE_SHARD_SETTING = [
 ]
 
 
+# Database Routers
+DATABASE_ROUTERS = ['djangoext.db.models.PartitionRouter']
+
+
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 DATABASES = {
