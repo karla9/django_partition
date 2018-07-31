@@ -4,8 +4,8 @@ class PartitionRouter(object):
     """
     @staticmethod
     def _db_for_database_partition(model):
-        if model._meta.partition['shard_level'] == 'database':
-            return 'default_' + model._meta.partition['shard_postfix']
+        if model._meta.partition['level'] == 'database':
+            return 'default_' + model._meta.partition['postfix']
         return None
 
     def db_for_read(self, model, **hints):

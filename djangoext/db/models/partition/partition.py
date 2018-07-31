@@ -173,11 +173,11 @@ class PartitionModelFactory(object):
         meta = utils.dict_to_object(partition_model.Meta.__dict__)
         if partition_id is not None:
             meta.partition = {}
-            meta.partition['shard_level'] = PartitionUtil.get_shard_level(partition_model)
-            if meta.partition['shard_level'] not in ('table', 'database'):
-                raise ValueError('shard level must be "table" or "database"')
-            meta.partition['shard_postfix'] = sharded_table_postfix
-            if meta.partition['shard_level'] == 'table':
+            meta.partition['level'] = PartitionUtil.get_shard_level(partition_model)
+            if meta.partition['level'] not in ('table', 'database'):
+                raise ValueError('partition level must be "table" or "database"')
+            meta.partition['postfix'] = sharded_table_postfix
+            if meta.partition['level'] == 'table':
                 meta.db_table += '_%s' % sharded_table_postfix
             # TODO: should find the app_label from the models.py definition
             # meta.app_label = BaseModel.Meta.app_label
