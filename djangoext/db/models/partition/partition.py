@@ -26,9 +26,12 @@ class PartitionUtil(object):
         """
         shard_conf = PartitionUtil.get_shard_conf(partition_model)
         if not shard_conf:
+            return None
+        level = shard_conf.get('level', None)
+        if not level:
             # For backward compatibility
             return 'table'
-        return shard_conf.get('level', None)
+        return level
 
     @staticmethod
     def get_shard_conf(partition_model):
