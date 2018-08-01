@@ -116,6 +116,16 @@ DATABASE_SHARD_SETTING = [
     {
         'tables': ['shop_customer_tab',
                    ],
+        'level': 'table',
+        'key': 'shop_id',
+        'rule': 'mod',
+        'divisor': 10,
+        'format': '02u',
+    },
+    {
+        'tables': ['shop_order_tab',
+                   ],
+        'level': 'database',
         'key': 'shop_id',
         'rule': 'mod',
         'divisor': 10,
@@ -141,6 +151,10 @@ DATABASE_SHARD_SETTING = [
 ]
 
 
+# Database Routers
+DATABASE_ROUTERS = ['djangoext.db.models.PartitionRouter']
+
+
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 DATABASES = {
@@ -154,6 +168,5 @@ DATABASES = {
         'PORT': 3306,
         'OPTIONS': {'charset': 'utf8'},
         'SHARD': DATABASE_SHARD_SETTING,
-    }
+    },
 }
-
