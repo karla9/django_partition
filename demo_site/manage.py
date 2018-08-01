@@ -8,8 +8,10 @@ if __name__ == "__main__":
     try:
         from django.core.management import execute_from_command_line
 
+        from djangoext.db.models import register_partition_databases
+        register_partition_databases(['default', ])
+
         # Add partition to Options default names.
-        # Is there a better place for the patch?
         from django.db.models import options
         extra_default_names = ('partition',)
         options.DEFAULT_NAMES = options.DEFAULT_NAMES + extra_default_names
