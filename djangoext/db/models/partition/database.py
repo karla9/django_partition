@@ -1,15 +1,14 @@
 from copy import deepcopy
-from django.conf import settings
 
 
-def register_partition_databases(db_labels):
+def register_partition_databases(databases, db_labels):
     for db_label in db_labels:
-        if db_label not in settings.DATABASES:
-            return
+        if db_label not in databases:
+            continue
 
-        db_conf = settings.DATABASES[db_label]
+        db_conf = databases[db_label]
         if 'SHARD' not in db_conf:
-            return
+            continue
 
         shard_conf_list = db_conf['SHARD']
 
@@ -21,4 +20,4 @@ def register_partition_databases(db_labels):
                     new_db_conf = deepcopy(db_conf)
                     new_db_conf['NAME'] += '_%s' % postfix
                     new_db_conf.pop('SHARD')
-                    settings.DATABASES[new_db_label] = new_db_conf
+                    databases[new_db_label] = new_db_conf

@@ -9,7 +9,8 @@ if __name__ == "__main__":
         from django.core.management import execute_from_command_line
 
         from djangoext.db.models import register_partition_databases
-        register_partition_databases(['default', ])
+        from django.conf import settings
+        register_partition_databases(settings.DATABASES, ['default', ])
 
         # Add partition to Options default names.
         from django.db.models import options
